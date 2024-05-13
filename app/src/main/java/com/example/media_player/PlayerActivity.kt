@@ -6,10 +6,13 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.example.media_player.databinding.ActivityPlayerBinding
 import com.google.android.exoplayer2.MediaItem
+import com.google.android.exoplayer2.Player
 import com.google.android.exoplayer2.SimpleExoPlayer
 import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
 import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
+
+private const val TAG = "PlayerActivity"
 
 class PlayerActivity : AppCompatActivity() {
 
@@ -21,6 +24,7 @@ class PlayerActivity : AppCompatActivity() {
     private var playWhenReady = true
     private var currentWindow = 0
     private var playbackPosition = 0L
+    private val playbackStateListener: Player.Listener = PlayerEvent.playbackStateListener(TAG)
 
     private fun initializePlayer() {
         player = SimpleExoPlayer.Builder(this)
@@ -40,6 +44,7 @@ class PlayerActivity : AppCompatActivity() {
                 exoPlayer.addMediaItem(mediaItem)
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.seekTo(currentWindow, playbackPosition)
+                exoPlayer.addListener(playbackStateListener)
                 exoPlayer.prepare()
             }
     }
@@ -59,6 +64,7 @@ class PlayerActivity : AppCompatActivity() {
             playbackPosition = this.currentPosition
             currentWindow = this.currentWindowIndex
             playWhenReady = this.playWhenReady
+            removeListener(playbackStateListener)
             release()
         }
         player = null
