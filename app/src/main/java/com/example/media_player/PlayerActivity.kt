@@ -1,16 +1,16 @@
 package com.example.media_player
 
-import android.annotation.SuppressLint
+import android.os.Build
 import android.os.Bundle
-import android.view.View
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MimeTypes
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 import com.example.media_player.databinding.ActivityPlayerBinding
-import com.google.android.exoplayer2.MediaItem
-import com.google.android.exoplayer2.Player
-import com.google.android.exoplayer2.SimpleExoPlayer
-import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
-import com.google.android.exoplayer2.util.MimeTypes
-import com.google.android.exoplayer2.util.Util
 
 private const val TAG = "PlayerActivity"
 
@@ -20,49 +20,47 @@ class PlayerActivity : AppCompatActivity() {
         ActivityPlayerBinding.inflate(layoutInflater)
     }
 
-    private var player: SimpleExoPlayer? = null
+    private var player: Player? = null
     private var playWhenReady = true
-    private var currentWindow = 0
+    private var mediaItemIndex = 0
     private var playbackPosition = 0L
     private val playbackStateListener: Player.Listener = PlayerEvent.playbackStateListener(TAG)
 
     private fun initializePlayer() {
-        player = SimpleExoPlayer.Builder(this)
+        player = ExoPlayer.Builder(this)
             .build()
             .also { exoPlayer ->
                 viewBinding.videoView.player = exoPlayer
-                val trackSelector = DefaultTrackSelector(this).apply {
-                    setParameters(buildUponParameters().setMaxVideoSizeSd())
-                }
-                player = SimpleExoPlayer.Builder(this)
-                    .setTrackSelector(trackSelector)
+                exoPlayer.trackSelectionParameters = exoPlayer.trackSelectionParameters
+                    .buildUpon()
+                    .setMaxVideoSizeSd()
                     .build()
+
                 val mediaItem = MediaItem.Builder()
                     .setUri(getString(R.string.media_url_dash))
                     .setMimeType(MimeTypes.APPLICATION_MPD)
                     .build()
                 exoPlayer.addMediaItem(mediaItem)
                 exoPlayer.playWhenReady = playWhenReady
-                exoPlayer.seekTo(currentWindow, playbackPosition)
+                exoPlayer.seekTo(mediaItemIndex, playbackPosition)
                 exoPlayer.addListener(playbackStateListener)
                 exoPlayer.prepare()
             }
     }
 
-    @SuppressLint("InlinedApi")
     private fun hideSystemUi() {
-        viewBinding.videoView.systemUiVisibility = (View.SYSTEM_UI_FLAG_LOW_PROFILE
-                or View.SYSTEM_UI_FLAG_FULLSCREEN
-                or View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                or View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-                or View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                or View.SYSTEM_UI_FLAG_HIDE_NAVIGATION)
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, viewBinding.videoView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
     }
 
     private fun releasePlayer() {
         player?.run {
             playbackPosition = this.currentPosition
-            currentWindow = this.currentWindowIndex
+            mediaItemIndex = this.currentMediaItemIndex
             playWhenReady = this.playWhenReady
             removeListener(playbackStateListener)
             release()
@@ -75,31 +73,31 @@ class PlayerActivity : AppCompatActivity() {
         setContentView(viewBinding.root)
     }
 
-    override fun onStart() {
+    public override fun onStart() {
         super.onStart()
-        if (Util.SDK_INT >= 24) {
+        if (Build.VERSION.SDK_INT > 23) {
             initializePlayer()
         }
     }
 
-    override fun onResume() {
+    public override fun onResume() {
         super.onResume()
         hideSystemUi()
-        if ((Util.SDK_INT < 24 || player == null)) {
+        if (Build.VERSION.SDK_INT <= 23 || player == null) {
             initializePlayer()
         }
     }
 
-    override fun onPause() {
+    public override fun onPause() {
         super.onPause()
-        if (Util.SDK_INT < 24) {
+        if (Build.VERSION.SDK_INT <= 23) {
             releasePlayer()
         }
     }
 
-    override fun onStop() {
+    public override fun onStop() {
         super.onStop()
-        if (Util.SDK_INT >= 24) {
+        if (Build.VERSION.SDK_INT > 23) {
             releasePlayer()
         }
     }

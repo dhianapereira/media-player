@@ -1,8 +1,8 @@
 package com.example.media_player
 
 import android.util.Log
-import com.google.android.exoplayer2.ExoPlayer
-import com.google.android.exoplayer2.Player
+import androidx.media3.common.Player
+import androidx.media3.exoplayer.ExoPlayer
 
 object PlayerEvent {
     fun playbackStateListener(tag: String) = object : Player.Listener {
