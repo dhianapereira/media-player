@@ -1,2 +1,2 @@
-# media-player
+# [WIP] Media Player
 A simple media player.
