@@ -7,6 +7,8 @@ import androidx.appcompat.app.AppCompatActivity
 import com.example.media_player.databinding.ActivityPlayerBinding
 import com.google.android.exoplayer2.MediaItem
 import com.google.android.exoplayer2.SimpleExoPlayer
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector
+import com.google.android.exoplayer2.util.MimeTypes
 import com.google.android.exoplayer2.util.Util
 
 class PlayerActivity : AppCompatActivity() {
@@ -25,10 +27,17 @@ class PlayerActivity : AppCompatActivity() {
             .build()
             .also { exoPlayer ->
                 viewBinding.videoView.player = exoPlayer
-                val mediaItem = MediaItem.fromUri(getString(R.string.media_url_mp4))
+                val trackSelector = DefaultTrackSelector(this).apply {
+                    setParameters(buildUponParameters().setMaxVideoSizeSd())
+                }
+                player = SimpleExoPlayer.Builder(this)
+                    .setTrackSelector(trackSelector)
+                    .build()
+                val mediaItem = MediaItem.Builder()
+                    .setUri(getString(R.string.media_url_dash))
+                    .setMimeType(MimeTypes.APPLICATION_MPD)
+                    .build()
                 exoPlayer.addMediaItem(mediaItem)
-                val secondMediaItem = MediaItem.fromUri(getString(R.string.media_url_mp3));
-                exoPlayer.addMediaItem(secondMediaItem);
                 exoPlayer.playWhenReady = playWhenReady
                 exoPlayer.seekTo(currentWindow, playbackPosition)
                 exoPlayer.prepare()
